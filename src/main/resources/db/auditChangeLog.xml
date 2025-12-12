@@ -1,0 +1,366 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Rev info table -->
+    <changeSet id="f2230160-cc84-4213-a591-05c09157e333" author="khanh_tran">
+        <createTable tableName="cetus_core_revinfo">
+            <column name="rev" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="timestamp" type="BIGINT" />
+            <column name="modified_by" type="NVARCHAR(150)" />
+        </createTable>
+    </changeSet>
+
+    <changeSet id="f2230160-cc84-ddaa-a591-05c09157e3b6" author="khanh_tran">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="employee_core_aud" />
+            </not>
+        </preConditions>
+        <createTable tableName="employee_core_aud">
+            <column name="employee_id" type="UUID">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="account_email" type="NVARCHAR(100)" />
+            <column name="company_email" type="NVARCHAR(255)"/>
+            <column name="company_phone_number" type="NVARCHAR(20)"/>
+            <column name="employee_code" type="NVARCHAR(20)"/>
+            <column name="employee_status" type="NVARCHAR(50)"/>
+            <column name="job_title_id" type="UUID" />
+            <column name="team_id" type="UUID" />
+            <column name="organization_id" type="UUID">
+                <constraints nullable="false" />
+            </column>
+
+            <column name="first_name" type="NVARCHAR(100)"/>
+            <column name="last_name" type="NVARCHAR(100)"/>
+            <column name="personal_email" type="NVARCHAR(255)"/>
+            <column name="personal_phone_number" type="NVARCHAR(20)"/>
+            <column name="date_of_birth" type="DATE"/>
+            <column name="current_address" type="NVARCHAR(255)"/>
+            <column name="birth_place" type="NVARCHAR(255)"/>
+            <column name="marital_status" type="NVARCHAR(50)"/>
+            <column name="gender" type="NVARCHAR(20)"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="f2230160-cc84-4ca2-a591-05c091571111" author="khanh_tran">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="job_title_aud" />
+            </not>
+        </preConditions>
+        <createTable tableName="job_title_aud">
+            <column name="job_title_id" type="UUID">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="title" type="NVARCHAR(255)"/>
+            <column name="description" type="NVARCHAR(1000)"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="5e26ba3f-8391-4be0-adb5-a5328a251345" author="khanh_tran">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="users_aud" />
+            </not>
+        </preConditions>
+        <createTable tableName="users_aud">
+            <column name="account_email" type="NVARCHAR(100)">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="password" type="NVARCHAR(64)">
+                <constraints nullable="false" />
+            </column>
+            <column name="account_status" type="NVARCHAR(50)">
+                <constraints nullable="false" />
+            </column>
+            <column name="organization_id" type="UUID">
+                <constraints nullable="false" />
+            </column>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="833a66e0-5d0a-499a-a5ec-af0fc651582b" author="khanh_tran">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="users_roles_aud" />
+            </not>
+        </preConditions>
+        <createTable tableName="users_roles_aud">
+            <column name="user_role_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="account_email" type="NVARCHAR(100)">
+                <constraints nullable="false" />
+            </column>
+            <column name="role_name" type="NVARCHAR(100)">
+                <constraints nullable="false" />
+            </column>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="ae7f3d6f-bcc2-4ed3-be16-ee1f82d7bdcb" author="duy_nguyen">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="certificate_aud" />
+            </not>
+        </preConditions>
+        <createTable tableName="certificate_aud">
+            <column name="certificate_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="certificate_name" type="NVARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="description" type="NVARCHAR(500)"/>
+            <column name="provider" type="NVARCHAR(500)">
+                <constraints nullable="false" />
+            </column>
+            <column name="level" type="NVARCHAR(100)"/>
+            <column name="license_code" type="NVARCHAR(255)"/>
+            <column name="issued_date" type="DATE"/>
+            <column name="expired_date" type="DATE"/>
+            <column name="certificate_img" type="NVARCHAR(500)"/>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false" />
+            </column>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="9bc7cfca-6f97-48e9-9a97-55c9a8b36507" author="duy_nguyen">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="bank_account_aud" />
+            </not>
+        </preConditions>
+        <createTable tableName="bank_account_aud">
+            <column name="bank_account_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="account_holder_name" type="NVARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="account_number" type="NVARCHAR(50)">
+                <constraints nullable="false" />
+            </column>
+            <column name="bank_name" type="NVARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="issued_date" type="DATE">
+                <constraints nullable="false" />
+            </column>
+            <column name="expired_date" type="DATE"/>
+            <column name="expiry_status" type="NVARCHAR(50)"/>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false" />
+            </column>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="742c0b57-7703-4334-b177-8ff9beb63ba9" author="duy_nguyen">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="department_aud"/>
+            </not>
+        </preConditions>
+        <createTable tableName="department_aud">
+            <column name="department_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="department_name" type="NVARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="department_code" type="NVARCHAR(255)"/>
+            <column name="description" type="NVARCHAR(1000)"/>
+            <column name="manager_id" type="UUID"/>
+            <column name="location" type="NVARCHAR(255)"/>
+            <column name="established_date" type="DATE"/>
+            <column name="phone_number" type="NVARCHAR(20)"/>
+            <column name="email" type="NVARCHAR(100)"/>
+            <column name="parent_id" type="UUID"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="78eadc95-63f3-4056-b57e-d32cde863das" author="khanh_tran">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="team_aud"/>
+            </not>
+        </preConditions>
+        <createTable tableName="team_aud">
+            <column name="team_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="description" type="NVARCHAR(1000)"/>
+            <column name="department_id" type="UUID"/>
+            <column name="established_date" type="DATE"/>
+            <column name="phone_number" type="NVARCHAR(20)"/>
+            <column name="email" type="NVARCHAR(100)"/>
+            <column name="location" type="NVARCHAR(255)"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="78eadc95-63f3-4056-b57e-d32cde863212" author="khanh_tran">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="team_member_aud"/>
+            </not>
+        </preConditions>
+        <createTable tableName="team_member_aud">
+            <column name="employee_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="team_id" type="UUID">
+                <constraints nullable="false" />
+            </column>
+            <column name="team_role" type="NVARCHAR(50)"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="66fc057b-73d6-4989-bd9a-dd1a39b9d3cc" author="duy_nguyen">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="employee_history_aud"/>
+            </not>
+        </preConditions>
+        <createTable tableName="employee_history_aud">
+            <column name="employee_history_id" type="UUID">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="company_name" type="NVARCHAR(255)"/>
+            <column name="employment_type" type="NVARCHAR(100)"/>
+            <column name="job_title" type="NVARCHAR(100)"/>
+            <column name="start_date" type="DATE"/>
+            <column name="end_date" type="DATE"/>
+            <column name="company_address" type="NVARCHAR(255)"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="f7b2cb12-cf66-426c-99a2-5bdc2a5d7a85" author="duy_nguyen">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="emergency_contact_aud"/>
+            </not>
+        </preConditions>
+        <createTable tableName="emergency_contact_aud">
+            <column name="emergency_contact_id" type="UUID">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contact_name" type="NVARCHAR(100)"/>
+            <column name="relationship" type="NVARCHAR(100)"/>
+            <column name="daytime_number" type="NVARCHAR(20)"/>
+            <column name="after_hours_number" type="NVARCHAR(20)"/>
+            <column name="contact_type" type="NVARCHAR(100)"/>
+            <column name="address" type="NVARCHAR(255)"/>
+
+            <!--Enable auditing-->
+            <column name="rev" type="INT">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="revtype" type="TINYINT">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

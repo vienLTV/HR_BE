@@ -1,0 +1,27 @@
+variables:
+  DOCKER_IMAGE_NAME: khanhtran95/cetus-core-jvm
+  DOCKER_IMAGE_TAG: latest
+  DOCKER_CONTAINER: "cetus_core"
+  APP_PORT: "8081"
+
+default:
+  image: maven:3.8.8-eclipse-temurin-21-alpine
+
+stages:
+  - maven-build
+  - docker-build
+  - deploy-dev
+  - post-deploy-dev
+
+maven-build:
+  stage: maven-build
+  script:
+    - chmod +x ./mvnw
+    - ./mvnw clean package
+  artifacts:
+    paths:
+      - target/
+    expire_in: 1 hour
+
+include:
+  - deploy-dev.yml
