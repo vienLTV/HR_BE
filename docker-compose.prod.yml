@@ -1,0 +1,18 @@
+services:
+  cetus-core:
+    image: khanhtran95/cetus-core-jvm
+    container_name: cetus_core
+    ports:
+      - "8081:8080"
+    networks:
+      - cetus_network
+    environment:
+      - QUARKUS_CONFIG_LOCATIONS=file:/config/application.properties
+    volumes:
+      - /opt/cetus-app/cetus-config/cetus-core/application.properties:/config/application.properties
+      - /opt/cetus-app/cetus-config/cetus-core/private-key.pem:/config/private-key.pem
+      - /opt/cetus-app/cetus-config/cetus-core/public-key.pem:/config/public-key.pem
+
+networks:
+  cetus_network:
+    external: true

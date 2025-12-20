@@ -1,70 +1,174 @@
-# cetus-core
+# Cetus Backend (Cetus_BE)
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Hệ thống Backend cho dự án **Cetus – Human Resource Management (HRM)**
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+---
 
-## Running the application in dev mode
+## 📋 Tổng quan
 
-You can run your application in dev mode that enables live coding using:
-```shell script
-./mvnw compile quarkus:dev
+Cetus Backend là RESTful API phục vụ hệ thống quản lý nhân sự, xây dựng bằng **Quarkus (Java 21)**, sử dụng **PostgreSQL**, **Liquibase** và **JWT Authentication** với phân quyền theo vai trò.
+
+### Chức năng chính
+
+- Quản lý nhân viên, phòng ban, team, chức danh
+- Quản lý thông tin cá nhân, tài khoản ngân hàng, chứng chỉ
+- Xác thực & phân quyền người dùng bằng JWT
+- Audit lịch sử thay đổi dữ liệu (Hibernate Envers)
+
+---
+
+## 🧱 Công nghệ sử dụng
+
+- **Framework**: Quarkus 3.x (Java 21)
+- **ORM**: Hibernate ORM with Panache
+- **Database**: PostgreSQL (Docker)
+- **Migration**: Liquibase
+- **Security**: SmallRye JWT (Bearer Token)
+- **Audit**: Hibernate Envers
+- **Build Tool**: Maven
+- **API Docs**: OpenAPI / Swagger UI
+- **DevOps**: Docker, Jenkins, GitLab CI/CD
+
+---
+
+## 🏗️ Kiến trúc Backend
+
+```text
+Client (Frontend - Next.js)
+        |
+        |  REST API + JWT
+        v
+Controller (REST Layer)
+        |
+        v
+Service (Business Logic)
+        |
+        v
+Repository (Panache ORM)
+        |
+        v
+PostgreSQL Database
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+## 📂Cấu trúc thư mục
 
-## Packaging and running the application
-
-The application can be packaged using:
-```shell script
-./mvnw package
-```
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using: 
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+```text
+cetus-core-master/
+├── src/main/java/org/microboy
+│   ├── config/            # Cấu hình ứng dụng (CORS, Beans)
+│   ├── constants/         # Hằng số dùng chung
+│   ├── dto/               # Data Transfer Objects
+│   ├── entity/            # JPA Entities
+│   ├── enums/             # Enum (Status, Role, ...)
+│   ├── exception/         # Custom Exceptions
+│   ├── repository/        # Panache Repositories
+│   ├── rest/              # REST Controllers
+│   ├── security/          # Authentication & Authorization (JWT)
+│   └── service/           # Business Logic Services
+│
+├── src/main/resources
+│   ├── application.properties   # Cấu hình DB, JWT, CORS
+│   ├── privateKey.pem            # JWT private key
+│   ├── publicKey.pem             # JWT public key
+│   └── db/
+│       └── changelog/            # Liquibase changelog
+│
+├── docker-compose.yml     # PostgreSQL Docker config
+├── Jenkinsfile            # Jenkins CI/CD pipeline
+├── deploy-dev.yml         # GitLab CI/CD
+├── pom.xml                # Maven dependencies
+└── README.md
 ```
 
-You can then execute your native executable with: `./target/cetus-core-1.0.0-SNAPSHOT-runner`
+## 🔐 Bảo mật & Phân quyền
 
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
+### Xác thực
 
-## Related Guides
+- Sử dụng JWT Bearer Token
+- Token được sinh khi đăng nhập thành công
+- Token được gửi qua header:
 
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-- Hibernate ORM ([guide](https://quarkus.io/guides/hibernate-orm)): Define your persistent model with Hibernate ORM and Jakarta Persistence
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
+```text
+Authorization: Bearer <token>
+```
 
-## Provided Code
+### Phân quyền (Roles)
 
-### Hibernate ORM
+- OWNER – Chủ tổ chức
+- ADMIN – Quản trị viên
+- MANAGER – Quản lý
 
-Create your first JPA entity
+### Cơ chế
 
-[Related guide section...](https://quarkus.io/guides/hibernate-orm)
+- Backend verify JWT
+- Kiểm tra role thông qua:
+  - @RolesAllowed
+  - Custom annotation @OwnerAdminManagerAllowed
 
+## 🌐 API chính
 
+| Method              | Endpoint          | Mô tả                   |
+| ------------------- | ----------------- | ----------------------- |
+| POST                | /auth/login       | Đăng nhập               |
+| POST                | /sign-up          | Đăng ký tổ chức + owner |
+| GET/POST/PUT/DELETE | /employees        | CRUD nhân viên          |
+| GET/POST            | /job-titles       | Quản lý chức danh       |
+| GET/POST            | /teams            | Quản lý team            |
+| GET/POST            | /departments      | Quản lý phòng ban       |
+| GET/POST            | /bank-accounts    | Tài khoản ngân hàng     |
+| GET/POST            | /certificates     | Chứng chỉ               |
+| GET                 | /employee-history | Lịch sử thay đổi        |
 
-### REST
+## 🗄️ Database & Migration
 
-Easily start your REST Web Services
+- Database: PostgreSQL
+- Migration tự động bằng Liquibase
+- Changelog chính:
+  - masterChangeLog.xml
+  - changeLog.xml
+  - auditChangeLog.xml
+- Liquibase sẽ tự tạo bảng khi ứng dụng khởi động.
 
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+## ⚙️ Yêu cầu môi trường
+
+- Java JDK 21
+- Docker Desktop
+- Git
+- ❌ Không cần cài PostgreSQL local
+
+## ▶️ Cách chạy Backend (Local)
+
+### 1. Khởi động PostgreSQL bằng Docker
+
+Trong thư mục cetus-core-master, chạy:
+
+```text
+docker compose up -d
+```
+
+📌 Lệnh này sẽ:
+-Khởi động container PostgreSQL
+
+- Map cổng database: 5431
+- Tạo database cetus_core (nếu chưa tồn tại)
+- Lưu dữ liệu vào Docker volume (cetus_pg_data)
+
+### 2️⃣ Chạy Backend bằng Maven (Quarkus Dev Mode)
+
+Trong cùng thư mục cetus-core-master, chạy:
+
+```text
+./mvnw quarkus:dev
+```
+
+Quarkus sẽ:
+
+- Kết nối tới PostgreSQL đang chạy
+- Tự động migrate database bằng Liquibase
+- Khởi động server ở chế độ dev (hot reload)
+
+### 3️⃣ Truy cập ứng dụng
+- Backend API:
+👉 http://localhost:8080
+- Swagger UI:
+👉 http://localhost:8080/q/swagger-ui

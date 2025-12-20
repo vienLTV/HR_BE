@@ -1,18 +1,16 @@
 services:
-  cetus-core:
-    image: khanhtran95/cetus-core-jvm
-    container_name: cetus_core
-    ports:
-      - "8081:8080"
-    networks:
-      - cetus_network
+  postgres:
+    image: postgres:16
+    container_name: cetus-pg
     environment:
-      - QUARKUS_CONFIG_LOCATIONS=file:/config/application.properties
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cetus_core
+    ports:
+      - "5431:5432"
     volumes:
-      - /opt/cetus-app/cetus-config/cetus-core/application.properties:/config/application.properties
-      - /opt/cetus-app/cetus-config/cetus-core/private-key.pem:/config/private-key.pem
-      - /opt/cetus-app/cetus-config/cetus-core/public-key.pem:/config/public-key.pem
+      - cetus_pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
-networks:
-  cetus_network:
-    external: true
+volumes:
+  cetus_pg_data:
