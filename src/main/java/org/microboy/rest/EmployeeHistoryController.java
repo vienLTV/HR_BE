@@ -27,7 +27,7 @@ public class EmployeeHistoryController {
     private final EmployeeHistoryService employeeHistoryService;
 
     @GET
-    @Path("/{employeeId}")
+    @Path("/employee/{employeeId}")
     @OwnerAdminManagerAllowed
     @Operation(summary = "Get all employee histories", description = "Returns a list of all employee histories")
     @APIResponse(responseCode = "200",
