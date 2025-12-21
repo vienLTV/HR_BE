@@ -1,10 +1,9 @@
 package org.microboy.dto.request;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
-import org.microboy.enums.EmploymentType;
 
 @Getter
 @Setter
@@ -14,12 +13,11 @@ import org.microboy.enums.EmploymentType;
 @RegisterForReflection
 public class EmployeeHistoryRequestDTO {
 
-    private UUID employeeHistoryId;
     private UUID employeeId;
-    private String companyName;
-    private EmploymentType employmentType;
-    private String jobTitle;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private String companyAddress;
+    private String fieldName;
+    private String oldValue;
+    private String newValue;
+    private String changeType;
+    private String changedBy;
+    private Instant changedAt;
 }

@@ -128,9 +128,16 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeCoreEntity.teamId = team.teamId;
         }
 
-        // Update employee core information
-        employeeCoreEntity.companyPhoneNumber = employeeRequest.getCompanyPhoneNumber();
-        employeeCoreEntity.companyEmail = employeeRequest.getCompanyEmail();
+        // Keep old values for audit
+        String oldFirstName = employeeCoreEntity.firstName;
+        String oldLastName = employeeCoreEntity.lastName;
+        String oldCompanyEmail = employeeCoreEntity.companyEmail;
+        // Keep old values before update for potential audit (future implementation)
+        // String oldFirstName = employeeCoreEntity.firstName;
+        // String oldLastName = employeeCoreEntity.lastName;
+        // String oldCompanyEmail = employeeCoreEntity.companyEmail;
+        // String oldJobTitleId = employeeCoreEntity.jobTitleId != null ? employeeCoreEntity.jobTitleId.toString() : null;
+        // String oldStatus = employeeCoreEntity.employeeStatus != null ? employeeCoreEntity.employeeStatus.name() : null;
         employeeCoreEntity.organizationId = employeeRequest.getOrganizationId();
         employeeCoreEntity.employeeStatus = employeeRequest.getEmployeeStatus();
         employeeCoreEntity.firstName = employeeRequest.getFirstName();

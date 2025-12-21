@@ -12,7 +12,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.microboy.dto.request.EmployeeHistoryRequestDTO;
 import org.microboy.dto.response.EmployeeHistoryResponseDTO;
 import org.microboy.dto.response.GeneralResponseDTO;
-import org.microboy.dto.response.PaginatedResponse;
 import org.microboy.security.utils.OwnerAdminManagerAllowed;
 import org.microboy.service.EmployeeHistoryService;
 
@@ -28,6 +27,7 @@ public class EmployeeHistoryController {
     private final EmployeeHistoryService employeeHistoryService;
 
     @GET
+    @Path("/{employeeId}")
     @OwnerAdminManagerAllowed
     @Operation(summary = "Get all employee histories", description = "Returns a list of all employee histories")
     @APIResponse(responseCode = "200",
@@ -36,12 +36,10 @@ public class EmployeeHistoryController {
                     schema = @Schema(implementation = EmployeeHistoryResponseDTO.class)))
     @APIResponse(responseCode = "500", description = "Internal server error")
 
-    public Response findAllEmployeeHistories(@QueryParam("employeeId") UUID employeeId,
-                                             @QueryParam("page") @DefaultValue("0") int page,
-                                             @QueryParam("size") @DefaultValue("20") int pageSize) {
-        PaginatedResponse<EmployeeHistoryResponseDTO> employees = employeeHistoryService.findAllEmployeeHistoryByEmployeeId(employeeId, page, pageSize);
+    public Response findAllEmployeeHistories(@PathParam("employeeId") UUID employeeId) {
+        var histories = employeeHistoryService.findAllEmployeeHistoryByEmployeeId(employeeId);
         return Response.status(Response.Status.OK)
-                .entity(new GeneralResponseDTO<>(true, Response.Status.OK.getStatusCode(), null, employees))
+                .entity(new GeneralResponseDTO<>(true, Response.Status.OK.getStatusCode(), null, histories))
                 .build();
     }
 

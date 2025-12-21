@@ -1,23 +1,19 @@
 package org.microboy.service;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.microboy.constants.ExceptionConstants;
-import org.microboy.dto.request.EmployeeHistoryRequestDTO;
-import org.microboy.dto.response.EmployeeHistoryResponseDTO;
-import org.microboy.dto.response.PaginatedResponse;
-import org.microboy.entity.EmployeeCoreEntity;
-import org.microboy.entity.EmployeeHistoryEntity;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.microboy.constants.ExceptionConstants;
+import org.microboy.dto.request.EmployeeHistoryRequestDTO;
+import org.microboy.dto.response.EmployeeHistoryResponseDTO;
+import org.microboy.entity.EmployeeCoreEntity;
+import org.microboy.entity.EmployeeHistoryEntity;
 
 @ApplicationScoped
 @RequiredArgsConstructor
@@ -55,7 +51,9 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
         EmployeeHistoryEntity.persist(employeeHistory);
         log.info("Created employee history with id {}", employeeHistory.employeeHistoryId);
 
-        return objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class);
+        EmployeeHistoryResponseDTO response = objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class);
+        response.setId(employeeHistory.employeeHistoryId);
+        return response;
     }
 
     /**
@@ -87,16 +85,18 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
             throw new BadRequestException(ExceptionConstants.EMPLOYEE_NOT_FOUND);
         }
 
-        employeeHistory.companyName = employeeHistoryDTO.getCompanyName();
-        employeeHistory.companyAddress = employeeHistoryDTO.getCompanyAddress();
-        employeeHistory.employmentType = employeeHistoryDTO.getEmploymentType();
-        employeeHistory.jobTitle = employeeHistoryDTO.getJobTitle();
-        employeeHistory.startDate = employeeHistoryDTO.getStartDate();
-        employeeHistory.endDate = employeeHistoryDTO.getEndDate();
+        employeeHistory.fieldName = employeeHistoryDTO.getFieldName();
+        employeeHistory.oldValue = employeeHistoryDTO.getOldValue();
+        employeeHistory.newValue = employeeHistoryDTO.getNewValue();
+        employeeHistory.changeType = employeeHistoryDTO.getChangeType();
+        employeeHistory.changedBy = employeeHistoryDTO.getChangedBy();
+        employeeHistory.changedAt = employeeHistoryDTO.getChangedAt();
 
         log.info("Updated employee history with id {}", employeeHistory.employeeHistoryId);
 
-        return objectMapper.convertValue(employeeHistoryDTO, EmployeeHistoryResponseDTO.class);
+        EmployeeHistoryResponseDTO response = objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class);
+        response.setId(employeeHistory.employeeHistoryId);
+        return response;
     }
 
     /**
@@ -109,34 +109,23 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
      * total number of items, total number of pages, current page, and page size.
      */
     @Override
-    public PaginatedResponse<EmployeeHistoryResponseDTO> findAllEmployeeHistoryByEmployeeId(
-        UUID employeeId,
-        int page,
-        int pageSize
+    public List<EmployeeHistoryResponseDTO> findAllEmployeeHistoryByEmployeeId(
+        UUID employeeId
     ) {
-        PaginatedResponse<EmployeeHistoryResponseDTO> response = new PaginatedResponse<>();
-
         List<EmployeeHistoryEntity> employeeHistoryEntities = EmployeeHistoryEntity.getPageByEmployeeId(
             employeeId,
-            page,
-            pageSize
+            0,
+            Integer.MAX_VALUE
         );
 
-        long totalItems = EmployeeHistoryEntity.getTotalItems(employeeId);
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-
-        List<EmployeeHistoryResponseDTO> employeeHistoryResponses = employeeHistoryEntities
+        return employeeHistoryEntities
             .stream()
-            .map(employeeHistory -> objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class))
+            .map(employeeHistory -> {
+                EmployeeHistoryResponseDTO dto = objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class);
+                dto.setId(employeeHistory.employeeHistoryId);
+                return dto;
+            })
             .toList();
-
-        response.setItems(employeeHistoryResponses);
-        response.setTotalItems(totalItems);
-        response.setTotalPages(totalPages);
-        response.setCurrentPage(page);
-        response.setPageSize(pageSize);
-
-        return response;
     }
 
     /**
@@ -158,7 +147,9 @@ public class EmployeeHistoryServiceImpl implements EmployeeHistoryService {
             throw new EntityNotFoundException(ExceptionConstants.EMPLOYEE_HISTORY_NOT_FOUND);
         }
 
-        return objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class);
+        EmployeeHistoryResponseDTO response = objectMapper.convertValue(employeeHistory, EmployeeHistoryResponseDTO.class);
+        response.setId(employeeHistory.employeeHistoryId);
+        return response;
     }
 
     /**

@@ -7,5 +7,6 @@
 
     <include file="db/changeLog.xml"/>
     <include file="db/auditChangeLog.xml"/>
+    <include file="db/employeeHistoryAuditChangeLog.xml"/>
 
 </databaseChangeLog>

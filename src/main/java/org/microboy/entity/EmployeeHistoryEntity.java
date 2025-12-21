@@ -2,7 +2,7 @@ package org.microboy.entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -28,24 +28,23 @@ public class EmployeeHistoryEntity extends PanacheEntityBase {
     @Column(name = "employee_id")
     public UUID employeeId;
 
-    @Column(name = "company_name")
-    public String companyName;
+    @Column(name = "field_name")
+    public String fieldName;
 
-    @Column(name = "employment_type")
-    @Enumerated(EnumType.STRING)
-    public EmploymentType employmentType;
+    @Column(name = "old_value")
+    public String oldValue;
 
-    @Column(name = "job_title")
-    public String jobTitle;
+    @Column(name = "new_value")
+    public String newValue;
 
-    @Column(name = "start_date")
-    public LocalDate startDate;
+    @Column(name = "change_type")
+    public String changeType;
 
-    @Column(name = "end_date")
-    public LocalDate endDate;
+    @Column(name = "changed_by")
+    public String changedBy;
 
-    @Column(name = "company_address")
-    public String companyAddress;
+    @Column(name = "changed_at")
+    public Instant changedAt;
 
     public static List<EmployeeHistoryEntity> getPageByEmployeeId(
         UUID employeeId,

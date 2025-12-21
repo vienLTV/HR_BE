@@ -1,0 +1,44 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+    http://www.liquibase.org/xml/ns/dbchangelog
+    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="employee-history-audit-refactor" author="copilot">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="employee_history"/>
+        </preConditions>
+        
+        <!-- Drop old columns -->
+        <dropColumn tableName="employee_history" columnName="company_name"/>
+        <dropColumn tableName="employee_history" columnName="company_address"/>
+        <dropColumn tableName="employee_history" columnName="employment_type"/>
+        <dropColumn tableName="employee_history" columnName="job_title"/>
+        <dropColumn tableName="employee_history" columnName="start_date"/>
+        <dropColumn tableName="employee_history" columnName="end_date"/>
+        
+        <!-- Add audit fields -->
+        <addColumn tableName="employee_history">
+            <column name="field_name" type="NVARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="employee_history">
+            <column name="old_value" type="NVARCHAR(500)"/>
+        </addColumn>
+        <addColumn tableName="employee_history">
+            <column name="new_value" type="NVARCHAR(500)"/>
+        </addColumn>
+        <addColumn tableName="employee_history">
+            <column name="change_type" type="NVARCHAR(50)"/>
+        </addColumn>
+        <addColumn tableName="employee_history">
+            <column name="changed_by" type="NVARCHAR(255)"/>
+        </addColumn>
+        <addColumn tableName="employee_history">
+            <column name="changed_at" type="TIMESTAMP"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

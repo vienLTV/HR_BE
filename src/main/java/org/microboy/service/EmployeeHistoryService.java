@@ -2,7 +2,7 @@ package org.microboy.service;
 
 import org.microboy.dto.request.EmployeeHistoryRequestDTO;
 import org.microboy.dto.response.EmployeeHistoryResponseDTO;
-import org.microboy.dto.response.PaginatedResponse;
+import java.util.List;
 
 import java.util.UUID;
 
@@ -12,7 +12,7 @@ public interface EmployeeHistoryService {
 
     EmployeeHistoryResponseDTO updateEmployeeHistory(EmployeeHistoryRequestDTO employeeHistoryDTO, UUID id);
 
-    PaginatedResponse<EmployeeHistoryResponseDTO> findAllEmployeeHistoryByEmployeeId(UUID employeeId, int page, int pageSize);
+    List<EmployeeHistoryResponseDTO> findAllEmployeeHistoryByEmployeeId(UUID employeeId);
 
     EmployeeHistoryResponseDTO findEmployeeHistoryById(UUID id);
 

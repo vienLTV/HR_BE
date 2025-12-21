@@ -1,0 +1,19 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< org.microboy:cetus-core >-----------------------
+[INFO] Building cetus-core 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- quarkus:3.11.1:dev (default-cli) @ cetus-core ---
+[INFO] Invoking resources:3.3.1:resources (default-resources) @ cetus-core
+[INFO] Copying 7 resources from src\main\resources to target\classes
+[INFO] Invoking quarkus:3.11.1:generate-code (default) @ cetus-core
+[INFO] Invoking compiler:3.12.1:compile (default-compile) @ cetus-core
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] Invoking resources:3.3.1:testResources (default-testResources) @ cetus-core
+[INFO] skip non existing resourceDirectory D:\2.UIT\HK4_2025-2026\Duan_Cetus\cetus-core-master\src\test\resources
+[INFO] Invoking quarkus:3.11.1:generate-code-tests (default) @ cetus-core
+[INFO] Invoking compiler:3.12.1:testCompile (default-testCompile) @ cetus-core
+[INFO] No sources to compile
+Listening for transport dt_socket at address: 5005
