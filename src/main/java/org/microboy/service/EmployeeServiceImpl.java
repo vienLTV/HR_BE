@@ -21,6 +21,8 @@ import org.microboy.entity.TeamEntity;
 import org.microboy.entity.TeamMemberEntity;
 import org.microboy.enums.EmployeeStatus;
 import org.microboy.security.config.OrganizationContext;
+import org.microboy.security.entity.UserEntity;
+import org.microboy.security.repository.UserRepository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -42,6 +44,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final JobTitleService jobTitleService;
     private final ObjectMapper objectMapper;
     private final OrganizationContext organizationContext;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -395,5 +398,67 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         return getEmployeeFullDataResponse(employee);
+    }
+
+    /**
+     * DEV/TEST ONLY: Ensures an EmployeeCoreEntity exists for the given user.
+     * If user.employeeId exists, returns it. Otherwise, creates a minimal EmployeeCoreEntity
+     * and links it to the user account.
+     *
+     * @param user The UserEntity to ensure has an employee record
+     * @return UUID of the employee (existing or newly created)
+     */
+    @Override
+    @Transactional
+    public UUID ensureEmployeeExistsForUser(UserEntity user) {
+        if (user == null) {
+            throw new BadRequestException("User cannot be null");
+        }
+
+        // If employeeId exists, return it
+        if (user.employeeId != null) {
+            return user.employeeId;
+        }
+
+        // DEV/TEST ONLY: Auto-create EmployeeCoreEntity if missing
+        log.warn("DEV/TEST: Auto-creating EmployeeCoreEntity for user {} (employeeId was null)", user.getAccountEmail());
+
+        UUID organizationId = organizationContext.getCurrentOrganizationId();
+        if (organizationId == null) {
+            throw new BadRequestException("Organization ID not found in context");
+        }
+
+        // Extract name from email (e.g., "john.doe@example.com" -> firstName: "John", lastName: "Doe")
+        String accountEmail = user.getAccountEmail();
+        String[] emailParts = accountEmail.split("@")[0].split("\\.");
+        String firstName = emailParts.length > 0 ? capitalize(emailParts[0]) : "User";
+        String lastName = emailParts.length > 1 ? capitalize(emailParts[1]) : "Account";
+
+        // Create minimal EmployeeCoreEntity
+        EmployeeCoreEntity employeeEntity = new EmployeeCoreEntity();
+        employeeEntity.organizationId = organizationId;
+        employeeEntity.firstName = firstName;
+        employeeEntity.lastName = lastName;
+        employeeEntity.companyEmail = accountEmail;
+        employeeEntity.employeeStatus = EmployeeStatus.PROBATION;
+
+        EmployeeCoreEntity.persist(employeeEntity);
+
+        // Link employee to user
+        user.employeeId = employeeEntity.employeeId;
+        userRepository.persist(user);
+
+        log.info("DEV/TEST: Created EmployeeCoreEntity {} for user {}", employeeEntity.employeeId, accountEmail);
+        return employeeEntity.employeeId;
+    }
+
+    /**
+     * Helper method to capitalize first letter of a string.
+     */
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
     }
 }

@@ -316,4 +316,78 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="a7b83058-b697-5027-c4bd-feafef7be3c3" author="attendance_module">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="attendance"/>
+            </not>
+        </preConditions>
+        <createTable tableName="attendance">
+            <column name="attendance_id" type="UUID">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="organization_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attendance_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="check_in_time" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="check_out_time" type="TIMESTAMP"/>
+            <column name="status" type="NVARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="notes" type="TEXT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="a7b83058-b697-5027-c4bd-feafef7be3c4" author="attendance_module">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_attendance_org_emp_date"/>
+            </not>
+        </preConditions>
+        <addUniqueConstraint tableName="attendance"
+                             constraintName="uk_attendance_org_emp_date"
+                             columnNames="organization_id,employee_id,attendance_date"/>
+    </changeSet>
+
+    <changeSet id="a7b83058-b697-5027-c4bd-feafef7be3c5" author="attendance_module">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_attendance_organization_id"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="attendance" indexName="idx_attendance_organization_id">
+            <column name="organization_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="a7b83058-b697-5027-c4bd-feafef7be3c6" author="attendance_module">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_attendance_employee_id"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="attendance" indexName="idx_attendance_employee_id">
+            <column name="employee_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="a7b83058-b697-5027-c4bd-feafef7be3c7" author="attendance_module">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_attendance_date"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="attendance" indexName="idx_attendance_date">
+            <column name="attendance_date"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
