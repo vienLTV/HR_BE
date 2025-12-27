@@ -15,7 +15,6 @@ import org.microboy.dto.response.PaginatedResponse;
 import org.microboy.entity.AttendanceEntity;
 import org.microboy.entity.EmployeeCoreEntity;
 import org.microboy.enums.AttendanceStatus;
-import org.microboy.security.config.OrganizationContext;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,35 +30,50 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AttendanceServiceImpl implements AttendanceService {
 
-	private final OrganizationContext organizationContext;
-
 	@Override
 	@Transactional
-	public AttendanceResponseDTO checkIn(UUID employeeId, AttendanceCheckInRequestDTO request) {
+	public AttendanceResponseDTO checkIn(UUID employeeId, UUID organizationId, AttendanceCheckInRequestDTO request) {
+		log.debug("Starting checkIn process for employeeId: {} orgId: {}", employeeId, organizationId);
+
 		if (employeeId == null) {
+			log.error("employeeId parameter is null");
 			throw new BadRequestException("Employee ID is required");
 		}
-
-		UUID organizationId = organizationContext.getCurrentOrganizationId();
 		if (organizationId == null) {
-			throw new BadRequestException("Organization ID not found in context");
+			log.error("organizationId parameter is null");
+			throw new BadRequestException("Organization ID is required");
 		}
 
 		// Verify employee exists and belongs to the organization
 		EmployeeCoreEntity employee = EmployeeCoreEntity.findById(employeeId);
 		if (employee == null) {
+			log.error("Employee not found: employeeId={}", employeeId);
 			throw new EntityNotFoundException(ExceptionConstants.EMPLOYEE_NOT_FOUND);
 		}
+
+		log.debug("Employee found: employeeId={}, employee.organizationId={}", employeeId, employee.organizationId);
+
+		if (employee.organizationId == null) {
+			log.error("Employee has null organizationId: employeeId={}", employeeId);
+			throw new BadRequestException("Employee organization is not set - data integrity error");
+		}
+
 		if (!organizationId.equals(employee.organizationId)) {
+			log.warn("Organization mismatch: JWT organizationId={}, employee.organizationId={}",
+				organizationId, employee.organizationId);
 			throw new BadRequestException("Employee does not belong to your organization");
 		}
 
 		LocalDate today = LocalDate.now();
 		LocalDateTime checkInTime = request.getCheckInTime() != null ? request.getCheckInTime() : LocalDateTime.now();
 
+		log.debug("Checking for existing attendance: organizationId={}, employeeId={}, date={}",
+			organizationId, employeeId, today);
+
 		// Check if attendance already exists for today
 		AttendanceEntity existingAttendance = AttendanceEntity.findByOrgAndEmployeeAndDate(organizationId, employeeId, today);
 		if (existingAttendance != null) {
+			log.warn("Duplicate check-in attempt: employeeId={}, date={}", employeeId, today);
 			throw new BadRequestException("You have already checked in today. Please check out first.");
 		}
 
@@ -75,21 +89,19 @@ public class AttendanceServiceImpl implements AttendanceService {
 			.build();
 
 		AttendanceEntity.persist(attendanceEntity);
-		log.info("Employee {} checked in at {}", employeeId, checkInTime);
+		log.info("Employee {} checked in successfully at {} for organization {}", employeeId, checkInTime, organizationId);
 
 		return convertToDTO(attendanceEntity);
 	}
 
 	@Override
 	@Transactional
-	public AttendanceResponseDTO checkOut(UUID employeeId, AttendanceCheckOutRequestDTO request) {
+	public AttendanceResponseDTO checkOut(UUID employeeId, UUID organizationId, AttendanceCheckOutRequestDTO request) {
 		if (employeeId == null) {
 			throw new BadRequestException("Employee ID is required");
 		}
-
-		UUID organizationId = organizationContext.getCurrentOrganizationId();
 		if (organizationId == null) {
-			throw new BadRequestException("Organization ID not found in context");
+			throw new BadRequestException("Organization ID is required");
 		}
 
 		// Verify employee exists and belongs to the organization
@@ -128,14 +140,12 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public PaginatedResponse<AttendanceResponseDTO> getMyAttendance(UUID employeeId, int page, int pageSize) {
+	public PaginatedResponse<AttendanceResponseDTO> getMyAttendance(UUID employeeId, UUID organizationId, int page, int pageSize) {
 		if (employeeId == null) {
 			throw new BadRequestException("Employee ID is required");
 		}
-
-		UUID organizationId = organizationContext.getCurrentOrganizationId();
 		if (organizationId == null) {
-			throw new BadRequestException("Organization ID not found in context");
+			throw new BadRequestException("Organization ID is required");
 		}
 
 		// Verify employee exists and belongs to the organization
@@ -168,10 +178,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 	}
 
 	@Override
-	public AttendanceDashboardSummaryDTO getDashboardSummary() {
-		UUID organizationId = organizationContext.getCurrentOrganizationId();
+	public AttendanceDashboardSummaryDTO getDashboardSummary(UUID organizationId) {
 		if (organizationId == null) {
-			throw new BadRequestException("Organization ID not found in context");
+			throw new BadRequestException("Organization ID is required");
 		}
 
 		// Count total employees in organization

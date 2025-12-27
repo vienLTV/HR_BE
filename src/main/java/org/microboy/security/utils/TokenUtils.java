@@ -24,7 +24,8 @@ public class TokenUtils {
 	                                   UUID organizationId,
 	                                   Set<Role> roles,
 	                                   Long duration,
-	                                   String issuer) throws Exception {
+	                                   String issuer,
+	                                   UUID employeeId) throws Exception {
 		String privateKeyLocation = privateKey;
 		PrivateKey privateKey = readPrivateKey(privateKeyLocation);
 
@@ -38,6 +39,9 @@ public class TokenUtils {
 		claimsBuilder.expiresAt(currentTimeInSecs + duration);
 		claimsBuilder.groups(groups);
 		claimsBuilder.claim("organizationId", organizationId);
+		if (employeeId != null) {
+			claimsBuilder.claim("employeeId", employeeId);
+		}
 
 		return claimsBuilder.jws().signatureKeyId(privateKeyLocation).sign(privateKey);
 	}

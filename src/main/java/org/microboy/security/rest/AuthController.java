@@ -1,6 +1,7 @@
 package org.microboy.security.rest;
 
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -18,7 +19,9 @@ import org.microboy.dto.request.SignUpRequestDTO;
 import org.microboy.dto.response.GeneralResponseDTO;
 import org.microboy.security.dto.AuthRequest;
 import org.microboy.security.dto.AuthResponse;
+import org.microboy.security.dto.request.CreateEmployeeAccountRequestDTO;
 import org.microboy.security.dto.UserDTO;
+import org.microboy.security.enums.Role;
 import org.microboy.security.service.UserService;
 import org.microboy.service.SignUpService;
 
@@ -94,6 +97,27 @@ public class AuthController {
 		                                                Response.Status.CREATED.getStatusCode(),
 		                                                null,
 		                                                null))
+		               .build();
+	}
+
+	@RolesAllowed({"OWNER", "ADMIN"})
+	@POST
+	@Path("/create-employee-account")
+	@Operation(summary = "Create user account for existing employee")
+	@APIResponses({
+			@APIResponse(responseCode = "201",
+			             description = "User account created",
+			             content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))),
+			@APIResponse(responseCode = "400", description = "Invalid request"),
+			@APIResponse(responseCode = "409", description = "Duplicate account")
+	})
+	public Response createEmployeeAccount(CreateEmployeeAccountRequestDTO request) {
+		var createdUser = userService.createUserForEmployee(request);
+		return Response.status(Response.Status.CREATED)
+		               .entity(new GeneralResponseDTO<>(true,
+		                                                Response.Status.CREATED.getStatusCode(),
+		                                                null,
+		                                                createdUser))
 		               .build();
 	}
 

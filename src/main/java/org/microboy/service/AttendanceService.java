@@ -10,12 +10,12 @@ import java.util.UUID;
 
 public interface AttendanceService {
 
-	AttendanceResponseDTO checkIn(UUID employeeId, AttendanceCheckInRequestDTO request);
+	AttendanceResponseDTO checkIn(UUID employeeId, UUID organizationId, AttendanceCheckInRequestDTO request);
 
-	AttendanceResponseDTO checkOut(UUID employeeId, AttendanceCheckOutRequestDTO request);
+	AttendanceResponseDTO checkOut(UUID employeeId, UUID organizationId, AttendanceCheckOutRequestDTO request);
 
-	PaginatedResponse<AttendanceResponseDTO> getMyAttendance(UUID employeeId, int page, int pageSize);
+	PaginatedResponse<AttendanceResponseDTO> getMyAttendance(UUID employeeId, UUID organizationId, int page, int pageSize);
 
-	AttendanceDashboardSummaryDTO getDashboardSummary();
+	AttendanceDashboardSummaryDTO getDashboardSummary(UUID organizationId);
 }
 

@@ -1,6 +1,7 @@
 package org.microboy.rest;
 
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -11,6 +12,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -39,6 +41,7 @@ import static org.microboy.security.constants.RoleConstants.USER;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Attendance", description = "Operations related to employee attendance")
+@Slf4j
 @RequiredArgsConstructor
 public class AttendanceController {
 
@@ -61,8 +64,12 @@ public class AttendanceController {
 		@APIResponse(responseCode = "500", description = "Internal server error")
 	})
 	public Response checkIn(AttendanceCheckInRequestDTO request) {
+		log.debug("Attendance check-in request received");
 		UUID employeeId = getCurrentEmployeeId();
-		AttendanceResponseDTO attendance = attendanceService.checkIn(employeeId, request);
+		UUID organizationId = getCurrentOrganizationId();
+		log.info("Processing check-in for employeeId: {} orgId: {}", employeeId, organizationId);
+		AttendanceResponseDTO attendance = attendanceService.checkIn(employeeId, organizationId, request);
+		log.info("Check-in successful for employeeId: {}", employeeId);
 		return Response.status(Response.Status.CREATED)
 		               .entity(new GeneralResponseDTO<>(true,
 		                                                Response.Status.CREATED.getStatusCode(),
@@ -86,7 +93,8 @@ public class AttendanceController {
 	})
 	public Response checkOut(AttendanceCheckOutRequestDTO request) {
 		UUID employeeId = getCurrentEmployeeId();
-		AttendanceResponseDTO attendance = attendanceService.checkOut(employeeId, request);
+		UUID organizationId = getCurrentOrganizationId();
+		AttendanceResponseDTO attendance = attendanceService.checkOut(employeeId, organizationId, request);
 		return Response.status(Response.Status.OK)
 		               .entity(new GeneralResponseDTO<>(true,
 		                                                Response.Status.OK.getStatusCode(),
@@ -111,7 +119,8 @@ public class AttendanceController {
 	public Response getMyAttendance(@QueryParam("page") @DefaultValue("0") int page,
 	                                @QueryParam("size") @DefaultValue("20") int size) {
 		UUID employeeId = getCurrentEmployeeId();
-		PaginatedResponse<AttendanceResponseDTO> attendance = attendanceService.getMyAttendance(employeeId, page, size);
+		UUID organizationId = getCurrentOrganizationId();
+		PaginatedResponse<AttendanceResponseDTO> attendance = attendanceService.getMyAttendance(employeeId, organizationId, page, size);
 		return Response.status(Response.Status.OK)
 		               .entity(new GeneralResponseDTO<>(true,
 		                                                Response.Status.OK.getStatusCode(),
@@ -133,7 +142,8 @@ public class AttendanceController {
 		@APIResponse(responseCode = "500", description = "Internal server error")
 	})
 	public Response getDashboardSummary() {
-		AttendanceDashboardSummaryDTO summary = attendanceService.getDashboardSummary();
+		UUID organizationId = getCurrentOrganizationId();
+		AttendanceDashboardSummaryDTO summary = attendanceService.getDashboardSummary(organizationId);
 		return Response.status(Response.Status.OK)
 		               .entity(new GeneralResponseDTO<>(true,
 		                                                Response.Status.OK.getStatusCode(),
@@ -151,18 +161,56 @@ public class AttendanceController {
 	 * @throws jakarta.ws.rs.BadRequestException if user not found
 	 */
 	private UUID getCurrentEmployeeId() {
-		String accountEmail = jwt.getSubject();
-		if (accountEmail == null || accountEmail.trim().isEmpty()) {
-			throw new jakarta.ws.rs.BadRequestException("Unable to identify logged-in user");
-		}
+		try {
+			if (jwt == null) {
+				log.error("JsonWebToken is null - JWT injection failed");
+				throw new BadRequestException("Authentication token not available");
+			}
 
-		UserEntity userEntity = userRepository.findById(accountEmail);
-		if (userEntity == null) {
-			throw new jakarta.ws.rs.BadRequestException("User not found");
-		}
+			Object employeeIdClaim = jwt.getClaim("employeeId");
+			if (employeeIdClaim == null) {
+				log.error("employeeId claim not found in JWT. Available claims: {}", jwt.getClaimNames());
+				throw new BadRequestException("employeeId not found in JWT token. Please ensure your account is linked to an employee.");
+			}
 
-		// Service layer handles auto-creation if needed (DEV/TEST only)
-		return employeeService.ensureEmployeeExistsForUser(userEntity);
+			String employeeIdStr = employeeIdClaim.toString();
+			log.debug("Extracted employeeId claim: {}", employeeIdStr);
+			
+			UUID employeeId = UUID.fromString(employeeIdStr);
+			log.debug("Successfully parsed employeeId: {}", employeeId);
+			return employeeId;
+			
+		} catch (IllegalArgumentException e) {
+			log.error("Failed to parse employeeId from JWT claim", e);
+			throw new BadRequestException("Invalid employeeId format in JWT token");
+		}
 	}
+
+	private UUID getCurrentOrganizationId() {
+		try {
+			if (jwt == null) {
+				log.error("JsonWebToken is null - JWT injection failed");
+				throw new BadRequestException("Authentication token not available");
+			}
+
+			Object organizationIdClaim = jwt.getClaim("organizationId");
+			if (organizationIdClaim == null) {
+				log.error("organizationId claim not found in JWT. Available claims: {}", jwt.getClaimNames());
+				throw new BadRequestException("organizationId not found in JWT token.");
+			}
+
+			String organizationIdStr = organizationIdClaim.toString();
+			log.debug("Extracted organizationId claim: {}", organizationIdStr);
+
+			UUID organizationId = UUID.fromString(organizationIdStr);
+			log.debug("Successfully parsed organizationId: {}", organizationId);
+			return organizationId;
+
+		} catch (IllegalArgumentException e) {
+			log.error("Failed to parse organizationId from JWT claim", e);
+			throw new BadRequestException("Invalid organizationId format in JWT token");
+		}
+	}
+
 }
 
