@@ -12,7 +12,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.envers.Audited;
 import org.microboy.enums.AttendanceStatus;
 
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Audited
 @Table(name = "attendance")
 public class AttendanceEntity extends PanacheEntityBase {
 

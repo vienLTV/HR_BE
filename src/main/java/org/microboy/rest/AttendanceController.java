@@ -1,6 +1,7 @@
 package org.microboy.rest;
 
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -65,17 +66,35 @@ public class AttendanceController {
 	})
 	public Response checkIn(AttendanceCheckInRequestDTO request) {
 		log.debug("Attendance check-in request received");
-		UUID employeeId = getCurrentEmployeeId();
-		UUID organizationId = getCurrentOrganizationId();
-		log.info("Processing check-in for employeeId: {} orgId: {}", employeeId, organizationId);
-		AttendanceResponseDTO attendance = attendanceService.checkIn(employeeId, organizationId, request);
-		log.info("Check-in successful for employeeId: {}", employeeId);
-		return Response.status(Response.Status.CREATED)
-		               .entity(new GeneralResponseDTO<>(true,
-		                                                Response.Status.CREATED.getStatusCode(),
-		                                                null,
-		                                                attendance))
-		               .build();
+		try {
+			UUID employeeId = getCurrentEmployeeId();
+			UUID organizationId = getCurrentOrganizationId();
+			log.info("Processing check-in for employeeId: {} orgId: {}", employeeId, organizationId);
+			AttendanceResponseDTO attendance = attendanceService.checkIn(employeeId, organizationId, request);
+			log.info("Check-in successful for employeeId: {}", employeeId);
+			return Response.status(Response.Status.CREATED)
+			               .entity(new GeneralResponseDTO<>(true,
+			                                                Response.Status.CREATED.getStatusCode(),
+			                                                null,
+			                                                attendance))
+			               .build();
+		} catch (BadRequestException | EntityNotFoundException e) {
+			log.warn("Check-in validation failed: {}", e.getMessage());
+			return Response.status(Response.Status.BAD_REQUEST)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.BAD_REQUEST.getStatusCode(),
+			                                                e.getMessage(),
+			                                                null))
+			               .build();
+		} catch (Exception e) {
+			log.error("Unexpected error during check-in", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+			                                                "An unexpected error occurred",
+			                                                null))
+			               .build();
+		}
 	}
 
 	@POST
@@ -92,15 +111,33 @@ public class AttendanceController {
 		@APIResponse(responseCode = "500", description = "Internal server error")
 	})
 	public Response checkOut(AttendanceCheckOutRequestDTO request) {
-		UUID employeeId = getCurrentEmployeeId();
-		UUID organizationId = getCurrentOrganizationId();
-		AttendanceResponseDTO attendance = attendanceService.checkOut(employeeId, organizationId, request);
-		return Response.status(Response.Status.OK)
-		               .entity(new GeneralResponseDTO<>(true,
-		                                                Response.Status.OK.getStatusCode(),
-		                                                null,
-		                                                attendance))
-		               .build();
+		try {
+			UUID employeeId = getCurrentEmployeeId();
+			UUID organizationId = getCurrentOrganizationId();
+			AttendanceResponseDTO attendance = attendanceService.checkOut(employeeId, organizationId, request);
+			return Response.status(Response.Status.OK)
+			               .entity(new GeneralResponseDTO<>(true,
+			                                                Response.Status.OK.getStatusCode(),
+			                                                null,
+			                                                attendance))
+			               .build();
+		} catch (BadRequestException | EntityNotFoundException e) {
+			log.warn("Check-out validation failed: {}", e.getMessage());
+			return Response.status(Response.Status.BAD_REQUEST)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.BAD_REQUEST.getStatusCode(),
+			                                                e.getMessage(),
+			                                                null))
+			               .build();
+		} catch (Exception e) {
+			log.error("Unexpected error during check-out", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+			                                                "An unexpected error occurred",
+			                                                null))
+			               .build();
+		}
 	}
 
 	@GET
@@ -118,15 +155,33 @@ public class AttendanceController {
 	})
 	public Response getMyAttendance(@QueryParam("page") @DefaultValue("0") int page,
 	                                @QueryParam("size") @DefaultValue("20") int size) {
-		UUID employeeId = getCurrentEmployeeId();
-		UUID organizationId = getCurrentOrganizationId();
-		PaginatedResponse<AttendanceResponseDTO> attendance = attendanceService.getMyAttendance(employeeId, organizationId, page, size);
-		return Response.status(Response.Status.OK)
-		               .entity(new GeneralResponseDTO<>(true,
-		                                                Response.Status.OK.getStatusCode(),
-		                                                null,
-		                                                attendance))
-		               .build();
+		try {
+			UUID employeeId = getCurrentEmployeeId();
+			UUID organizationId = getCurrentOrganizationId();
+			PaginatedResponse<AttendanceResponseDTO> attendance = attendanceService.getMyAttendance(employeeId, organizationId, page, size);
+			return Response.status(Response.Status.OK)
+			               .entity(new GeneralResponseDTO<>(true,
+			                                                Response.Status.OK.getStatusCode(),
+			                                                null,
+			                                                attendance))
+			               .build();
+		} catch (BadRequestException | EntityNotFoundException e) {
+			log.warn("Get attendance validation failed: {}", e.getMessage());
+			return Response.status(Response.Status.BAD_REQUEST)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.BAD_REQUEST.getStatusCode(),
+			                                                e.getMessage(),
+			                                                null))
+			               .build();
+		} catch (Exception e) {
+			log.error("Unexpected error getting attendance", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+			                                                "An unexpected error occurred",
+			                                                null))
+			               .build();
+		}
 	}
 
 	@GET
@@ -142,14 +197,32 @@ public class AttendanceController {
 		@APIResponse(responseCode = "500", description = "Internal server error")
 	})
 	public Response getDashboardSummary() {
-		UUID organizationId = getCurrentOrganizationId();
-		AttendanceDashboardSummaryDTO summary = attendanceService.getDashboardSummary(organizationId);
-		return Response.status(Response.Status.OK)
-		               .entity(new GeneralResponseDTO<>(true,
-		                                                Response.Status.OK.getStatusCode(),
-		                                                null,
-		                                                summary))
-		               .build();
+		try {
+			UUID organizationId = getCurrentOrganizationId();
+			AttendanceDashboardSummaryDTO summary = attendanceService.getDashboardSummary(organizationId);
+			return Response.status(Response.Status.OK)
+			               .entity(new GeneralResponseDTO<>(true,
+			                                                Response.Status.OK.getStatusCode(),
+			                                                null,
+			                                                summary))
+			               .build();
+		} catch (BadRequestException e) {
+			log.warn("Dashboard summary validation failed: {}", e.getMessage());
+			return Response.status(Response.Status.BAD_REQUEST)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.BAD_REQUEST.getStatusCode(),
+			                                                e.getMessage(),
+			                                                null))
+			               .build();
+		} catch (Exception e) {
+			log.error("Unexpected error getting dashboard summary", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+			               .entity(new GeneralResponseDTO<>(false,
+			                                                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+			                                                "An unexpected error occurred",
+			                                                null))
+			               .build();
+		}
 	}
 
 	/**

@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.microboy.constants.ExceptionConstants;
 import org.microboy.dto.request.AttendanceCheckInRequestDTO;
@@ -27,7 +26,6 @@ import java.util.UUID;
  */
 @ApplicationScoped
 @Slf4j
-@RequiredArgsConstructor
 public class AttendanceServiceImpl implements AttendanceService {
 
 	@Override
