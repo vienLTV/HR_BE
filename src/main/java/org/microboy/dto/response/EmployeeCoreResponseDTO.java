@@ -25,6 +25,7 @@ import lombok.Setter;
 @RegisterForReflection
 public class EmployeeCoreResponseDTO {
 	private UUID employeeId;
+	private UUID userId;
 	private String companyEmail;
 	private String companyPhoneNumber;
 	private String employeeCode;

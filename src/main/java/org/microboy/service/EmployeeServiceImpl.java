@@ -277,6 +277,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeResponse.setMaritalStatus(employee.maritalStatus);
         employeeResponse.setCurrentAddress(employee.currentAddress);
 
+        // Check if employee has user account (use accountEmail as userId indicator)
+        UserEntity userEntity = userRepository.find("employeeId", employee.employeeId).firstResult();
+        if (userEntity != null) {
+            // Use accountEmail as unique identifier for hasAccount check
+            employeeResponse.setUserId(UUID.nameUUIDFromBytes(userEntity.getAccountEmail().getBytes()));
+        }
+
         if (employee.jobTitleId != null) {
             JobTitleEntity jobTitle = JobTitleEntity.findById(employee.jobTitleId);
             if (jobTitle != null) {
