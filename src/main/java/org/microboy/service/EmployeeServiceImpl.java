@@ -572,6 +572,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employeeCoreEntity == null) {
             throw new EntityNotFoundException(ExceptionConstants.EMPLOYEE_NOT_FOUND);
         }
+        
+        // Delete associated user account if exists
+        UserEntity userEntity = userRepository.find("employeeId", id).firstResult();
+        if (userEntity != null) {
+            log.info("Deleting user account for employee: {}", id);
+            userRepository.delete(userEntity);
+        }
+        
         EmployeeCoreEntity.deleteById(id);
         log.info("Deleted employee with id: {}", id);
     }

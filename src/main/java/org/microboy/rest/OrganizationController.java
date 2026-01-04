@@ -1,7 +1,9 @@
 package org.microboy.rest;
 
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -15,9 +17,16 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.microboy.dto.JobTitleDTO;
+import org.microboy.dto.OrganizationDTO;
 import org.microboy.dto.request.SignUpRequestDTO;
 import org.microboy.dto.response.GeneralResponseDTO;
+import org.microboy.entity.OrganizationEntity;
+import org.microboy.security.config.OrganizationContext;
 import org.microboy.service.SignUpService;
+
+import static org.microboy.security.constants.RoleConstants.ADMIN;
+import static org.microboy.security.constants.RoleConstants.OWNER;
+import static org.microboy.security.constants.RoleConstants.MANAGER;
 
 @Path(("/sign-up"))
 @Produces(MediaType.APPLICATION_JSON)
@@ -26,6 +35,7 @@ import org.microboy.service.SignUpService;
 @RequiredArgsConstructor
 public class OrganizationController {
 	private final SignUpService signUpService;
+	private final OrganizationContext organizationContext;
 
 	@POST
 	@PermitAll
@@ -44,6 +54,40 @@ public class OrganizationController {
 		                                                Response.Status.CREATED.getStatusCode(),
 		                                                null,
 		                                                null))
+		               .build();
+	}
+
+	@GET
+	@Path("/current")
+	@RolesAllowed({OWNER, ADMIN, MANAGER})
+	@Operation(summary = "Get current organization", description = "Return current organization details")
+	@APIResponses({
+			@APIResponse(responseCode = "200",
+			             description = "Successful, organization returned",
+			             content = @Content(mediaType = "application/json",
+			                                schema = @Schema(implementation = OrganizationDTO.class))),
+			@APIResponse(responseCode = "500", description = "Internal server error")
+	})
+	public Response getCurrentOrganization() {
+		java.util.UUID organizationId = organizationContext.getCurrentOrganizationId();
+		OrganizationEntity organization = OrganizationEntity.findById(organizationId);
+		if (organization == null) {
+			return Response.status(Response.Status.NOT_FOUND)
+			               .entity(new GeneralResponseDTO<>(false, 404, "Organization not found", null))
+			               .build();
+		}
+		
+		OrganizationDTO dto = new OrganizationDTO();
+		dto.setOrganizationId(organization.organizationId);
+		dto.setName(organization.name);
+		dto.setCreatedAt(organization.createdAt);
+		dto.setOwner(organization.owner);
+		
+		return Response.status(Response.Status.OK)
+		               .entity(new GeneralResponseDTO<>(true,
+		                                                Response.Status.OK.getStatusCode(),
+		                                                null,
+		                                                dto))
 		               .build();
 	}
 }
