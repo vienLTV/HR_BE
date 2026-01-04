@@ -35,6 +35,7 @@ import org.microboy.service.EmployeeService;
 import java.util.UUID;
 
 import static org.microboy.security.constants.RoleConstants.ADMIN;
+import static org.microboy.security.constants.RoleConstants.MANAGER;
 import static org.microboy.security.constants.RoleConstants.OWNER;
 import static org.microboy.security.constants.RoleConstants.USER;
 
@@ -53,7 +54,7 @@ public class AttendanceController {
 
 	@POST
 	@Path("/check-in")
-	@RolesAllowed({USER, OWNER})
+	@RolesAllowed({USER, MANAGER, ADMIN, OWNER})
 	@Operation(summary = "Check in for the day", description = "Employee checks in for today. Creates a new attendance record with PENDING status.")
 	@APIResponses({
 		@APIResponse(responseCode = "201",
@@ -99,7 +100,7 @@ public class AttendanceController {
 
 	@POST
 	@Path("/check-out")
-	@RolesAllowed({USER, OWNER})
+	@RolesAllowed({USER, MANAGER, ADMIN, OWNER})
 	@Operation(summary = "Check out for the day", description = "Employee checks out for today. Updates the attendance record and sets status to PRESENT.")
 	@APIResponses({
 		@APIResponse(responseCode = "200",
@@ -142,7 +143,7 @@ public class AttendanceController {
 
 	@GET
 	@Path("/my-attendance")
-	@RolesAllowed({USER, OWNER})
+	@RolesAllowed({USER, MANAGER, ADMIN, OWNER})
 	@Operation(summary = "Get my attendance records", description = "Returns paginated list of attendance records for the logged-in employee")
 	@APIResponses({
 		@APIResponse(responseCode = "200",
