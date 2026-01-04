@@ -9,14 +9,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.envers.Audited;
 import org.microboy.enums.EmploymentType;
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Audited
 @Table(name = "employee_history")
 public class EmployeeHistoryEntity extends PanacheEntityBase {
 

@@ -1,5 +1,6 @@
 package org.microboy.service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,8 +16,10 @@ import org.microboy.dto.response.EmployeeCoreResponseDTO;
 import org.microboy.dto.response.PaginatedResponse;
 import org.microboy.entity.DepartmentEntity;
 import org.microboy.entity.EmployeeCoreEntity;
+import org.microboy.entity.EmployeeHistoryEntity;
 import org.microboy.entity.EmployeeJobTitleEntity;
 import org.microboy.entity.JobTitleEntity;
+import org.microboy.entity.OrganizationEntity;
 import org.microboy.entity.TeamEntity;
 import org.microboy.entity.TeamMemberEntity;
 import org.microboy.enums.EmployeeStatus;
@@ -131,16 +134,18 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeCoreEntity.teamId = team.teamId;
         }
 
-        // Keep old values for audit
+        // Save old values for history tracking
         String oldFirstName = employeeCoreEntity.firstName;
         String oldLastName = employeeCoreEntity.lastName;
-        String oldCompanyEmail = employeeCoreEntity.companyEmail;
-        // Keep old values before update for potential audit (future implementation)
-        // String oldFirstName = employeeCoreEntity.firstName;
-        // String oldLastName = employeeCoreEntity.lastName;
-        // String oldCompanyEmail = employeeCoreEntity.companyEmail;
-        // String oldJobTitleId = employeeCoreEntity.jobTitleId != null ? employeeCoreEntity.jobTitleId.toString() : null;
-        // String oldStatus = employeeCoreEntity.employeeStatus != null ? employeeCoreEntity.employeeStatus.name() : null;
+        String oldCurrentAddress = employeeCoreEntity.currentAddress;
+        String oldPersonalPhoneNumber = employeeCoreEntity.personalPhoneNumber;
+        String oldBirthPlace = employeeCoreEntity.birthPlace;
+        String oldPersonalEmail = employeeCoreEntity.personalEmail;
+        EmployeeStatus oldEmployeeStatus = employeeCoreEntity.employeeStatus;
+        UUID oldJobTitleId = employeeCoreEntity.jobTitleId;
+        UUID oldTeamId = employeeCoreEntity.teamId;
+
+        // Update employee information
         employeeCoreEntity.organizationId = employeeRequest.getOrganizationId();
         employeeCoreEntity.employeeStatus = employeeRequest.getEmployeeStatus();
         employeeCoreEntity.firstName = employeeRequest.getFirstName();
@@ -152,6 +157,72 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeCoreEntity.gender = employeeRequest.getGender();
         employeeCoreEntity.personalEmail = employeeRequest.getPersonalEmail();
         employeeCoreEntity.maritalStatus = employeeRequest.getMaritalStatus();
+
+        // Create history records for changed fields
+        String changedBy = "SYSTEM"; // TODO: Get from JWT token
+        Instant changedAt = Instant.now();
+
+        log.info("=== EMPLOYEE UPDATE DEBUG ===");
+        log.info("Employee ID: {}", id);
+        log.info("Old First Name: '{}', New First Name: '{}'", oldFirstName, employeeRequest.getFirstName());
+        log.info("Are they equal? {}", StringUtils.equals(oldFirstName, employeeRequest.getFirstName()));
+
+        // Track First Name changes
+        if (!StringUtils.equals(oldFirstName, employeeRequest.getFirstName())) {
+            log.info("Creating history record for First Name change");
+            createHistoryRecord(id, "First Name", oldFirstName, employeeRequest.getFirstName(), changedBy, changedAt);
+        } else {
+            log.info("First Name has NOT changed - skipping history");
+        }
+
+        // Track Last Name changes
+        if (!StringUtils.equals(oldLastName, employeeRequest.getLastName())) {
+            createHistoryRecord(id, "Last Name", oldLastName, employeeRequest.getLastName(), changedBy, changedAt);
+        }
+
+        // Track Current Address changes
+        if (!StringUtils.equals(oldCurrentAddress, employeeRequest.getCurrentAddress())) {
+            createHistoryRecord(id, "Current Address", oldCurrentAddress, employeeRequest.getCurrentAddress(), changedBy, changedAt);
+        }
+
+        // Track Personal Phone changes
+        if (!StringUtils.equals(oldPersonalPhoneNumber, employeeRequest.getPersonalPhoneNumber())) {
+            createHistoryRecord(id, "Personal Phone", oldPersonalPhoneNumber, employeeRequest.getPersonalPhoneNumber(), changedBy, changedAt);
+        }
+
+        // Track Birth Place changes
+        if (!StringUtils.equals(oldBirthPlace, employeeRequest.getBirthPlace())) {
+            createHistoryRecord(id, "Birth Place", oldBirthPlace, employeeRequest.getBirthPlace(), changedBy, changedAt);
+        }
+
+        // Track Personal Email changes
+        if (!StringUtils.equals(oldPersonalEmail, employeeRequest.getPersonalEmail())) {
+            createHistoryRecord(id, "Personal Email", oldPersonalEmail, employeeRequest.getPersonalEmail(), changedBy, changedAt);
+        }
+
+        // Track Employee Status changes
+        if (oldEmployeeStatus != employeeRequest.getEmployeeStatus()) {
+            createHistoryRecord(id, "Employee Status", 
+                oldEmployeeStatus != null ? oldEmployeeStatus.name() : null, 
+                employeeRequest.getEmployeeStatus() != null ? employeeRequest.getEmployeeStatus().name() : null, 
+                changedBy, changedAt);
+        }
+
+        // Track Job Title changes
+        UUID newJobTitleId = employeeRequest.getJobTitleId();
+        if (!java.util.Objects.equals(oldJobTitleId, newJobTitleId)) {
+            String oldJobTitleName = oldJobTitleId != null ? getJobTitleName(oldJobTitleId) : null;
+            String newJobTitleName = newJobTitleId != null ? getJobTitleName(newJobTitleId) : null;
+            createHistoryRecord(id, "Job Title", oldJobTitleName, newJobTitleName, changedBy, changedAt);
+        }
+
+        // Track Team changes
+        UUID newTeamId = employeeRequest.getTeamId();
+        if (!java.util.Objects.equals(oldTeamId, newTeamId)) {
+            String oldTeamName = oldTeamId != null ? getTeamName(oldTeamId) : null;
+            String newTeamName = newTeamId != null ? getTeamName(newTeamId) : null;
+            createHistoryRecord(id, "Team", oldTeamName, newTeamName, changedBy, changedAt);
+        }
 
         log.info("Updated employee with id {}", id);
         return employeeRequest;
@@ -168,6 +239,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employeeCoreEntity == null) {
             throw new BadRequestException("employee not found");
         }
+
+        // Save old values for history tracking
+        String oldEmployeeCode = employeeCoreEntity.employeeCode;
+        String oldCompanyEmail = employeeCoreEntity.companyEmail;
+        String oldCompanyPhoneNumber = employeeCoreEntity.companyPhoneNumber;
+        EmployeeStatus oldEmployeeStatus = employeeCoreEntity.employeeStatus;
+        UUID oldJobTitleId = employeeCoreEntity.jobTitleId;
+        UUID oldTeamId = employeeCoreEntity.teamId;
 
         // Verify job title
         JobTitleDTO jobTitleDTO = employee.getJobTitle();
@@ -195,8 +274,75 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeCoreEntity.companyPhoneNumber = employee.getCompanyPhoneNumber();
         employeeCoreEntity.employeeStatus = employee.getEmployeeStatus();
 
+        // Create history records for changed fields
+        String changedBy = "SYSTEM"; // TODO: Get from JWT token
+        Instant changedAt = Instant.now();
+
+        // Track Employee Code changes
+        if (!StringUtils.equals(oldEmployeeCode, employee.getEmployeeCode())) {
+            createHistoryRecord(id, "Employee Code", oldEmployeeCode, employee.getEmployeeCode(), changedBy, changedAt);
+        }
+
+        // Track Company Email changes
+        if (!StringUtils.equals(oldCompanyEmail, employee.getCompanyEmail())) {
+            createHistoryRecord(id, "Company Email", oldCompanyEmail, employee.getCompanyEmail(), changedBy, changedAt);
+        }
+
+        // Track Company Phone changes
+        if (!StringUtils.equals(oldCompanyPhoneNumber, employee.getCompanyPhoneNumber())) {
+            createHistoryRecord(id, "Company Phone", oldCompanyPhoneNumber, employee.getCompanyPhoneNumber(), changedBy, changedAt);
+        }
+
+        // Track Employee Status changes
+        if (oldEmployeeStatus != employee.getEmployeeStatus()) {
+            createHistoryRecord(id, "Employee Status", 
+                oldEmployeeStatus != null ? oldEmployeeStatus.name() : null, 
+                employee.getEmployeeStatus() != null ? employee.getEmployeeStatus().name() : null, 
+                changedBy, changedAt);
+        }
+
+        // Track Job Title changes
+        UUID newJobTitleId = jobTitleDTO != null ? jobTitleDTO.getJobTitleId() : null;
+        if (!java.util.Objects.equals(oldJobTitleId, newJobTitleId)) {
+            String oldJobTitleName = oldJobTitleId != null ? getJobTitleName(oldJobTitleId) : null;
+            String newJobTitleName = newJobTitleId != null ? getJobTitleName(newJobTitleId) : null;
+            createHistoryRecord(id, "Job Title", oldJobTitleName, newJobTitleName, changedBy, changedAt);
+        }
+
+        // Track Team changes
+        UUID newTeamId = teamDTO != null ? teamDTO.getTeamId() : null;
+        if (!java.util.Objects.equals(oldTeamId, newTeamId)) {
+            String oldTeamName = oldTeamId != null ? getTeamName(oldTeamId) : null;
+            String newTeamName = newTeamId != null ? getTeamName(newTeamId) : null;
+            createHistoryRecord(id, "Team", oldTeamName, newTeamName, changedBy, changedAt);
+        }
+
         log.info("Updated employee overview with id {}", id);
         return employee;
+    }
+
+    private void createHistoryRecord(UUID employeeId, String fieldName, String oldValue, String newValue, String changedBy, Instant changedAt) {
+        EmployeeHistoryEntity history = EmployeeHistoryEntity.builder()
+            .employeeId(employeeId)
+            .fieldName(fieldName)
+            .oldValue(oldValue)
+            .newValue(newValue)
+            .changeType("UPDATE")
+            .changedBy(changedBy)
+            .changedAt(changedAt)
+            .build();
+        EmployeeHistoryEntity.persist(history);
+        log.info("Created history record for employee {} - {} changed from '{}' to '{}'", employeeId, fieldName, oldValue, newValue);
+    }
+
+    private String getJobTitleName(UUID jobTitleId) {
+        JobTitleEntity jobTitle = JobTitleEntity.findById(jobTitleId);
+        return jobTitle != null ? jobTitle.title : null;
+    }
+
+    private String getTeamName(UUID teamId) {
+        TeamEntity team = TeamEntity.findById(teamId);
+        return team != null ? team.name : null;
     }
 
     /**
@@ -210,12 +356,45 @@ public class EmployeeServiceImpl implements EmployeeService {
         List<EmployeeCoreResponseDTO> employeeCoreResponses = new ArrayList<>();
 
         UUID organizationId = organizationContext.getCurrentOrganizationId();
-        List<EmployeeCoreEntity> employeeCoreEntities = EmployeeCoreEntity.findEmployeesByOrgId(organizationId)
-            .page(page, pageSize)
-            .list();
-
-        long totalItems = EmployeeCoreEntity.findEmployeesByOrgId(organizationId).count();
+        
+        // Get organization to find owner
+        OrganizationEntity organization = OrganizationEntity.findById(organizationId);
+        String ownerEmail = organization != null ? organization.owner : null;
+        log.info("🔍 Owner email from organization: {}", ownerEmail);
+        
+        // Get all employees (without pagination first, to sort correctly)
+        List<EmployeeCoreEntity> allEmployees = EmployeeCoreEntity.findEmployeesByOrgId(organizationId).list();
+        
+        log.info("📋 BEFORE SORTING:");
+        allEmployees.forEach(e -> log.info("  - {} {}: companyEmail={}, personalEmail={}, id={}", 
+            e.firstName, e.lastName, e.companyEmail, e.personalEmail, e.employeeId));
+        
+        // Sort: Owner first, then by employee creation order (using UUID which is time-based)
+        allEmployees.sort((e1, e2) -> {
+            // Check if employee is owner by comparing with both company email and personal email
+            boolean e1IsOwner = ownerEmail != null && 
+                (ownerEmail.equalsIgnoreCase(e1.companyEmail) || ownerEmail.equalsIgnoreCase(e1.personalEmail));
+            boolean e2IsOwner = ownerEmail != null && 
+                (ownerEmail.equalsIgnoreCase(e2.companyEmail) || ownerEmail.equalsIgnoreCase(e2.personalEmail));
+            
+            if (e1IsOwner && !e2IsOwner) return -1;
+            if (!e1IsOwner && e2IsOwner) return 1;
+            
+            // Both are owner or both are not owner - sort by employeeId (creation time)
+            return e1.employeeId.compareTo(e2.employeeId);
+        });
+        
+        log.info("📋 AFTER SORTING:");
+        allEmployees.forEach(e -> log.info("  - {} {}: companyEmail={}, personalEmail={}, id={}", 
+            e.firstName, e.lastName, e.companyEmail, e.personalEmail, e.employeeId));
+        
+        // Apply pagination after sorting
+        long totalItems = allEmployees.size();
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        
+        int startIndex = page * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, allEmployees.size());
+        List<EmployeeCoreEntity> employeeCoreEntities = allEmployees.subList(startIndex, endIndex);
 
         employeeCoreEntities.forEach(employeeCoreEntity -> {
             EmployeeCoreResponseDTO employeeResponse = getEmployeeFullDataResponse(employeeCoreEntity);
@@ -278,10 +457,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeResponse.setCurrentAddress(employee.currentAddress);
 
         // Check if employee has user account (use accountEmail as userId indicator)
-        UserEntity userEntity = userRepository.find("employeeId", employee.employeeId).firstResult();
-        if (userEntity != null) {
-            // Use accountEmail as unique identifier for hasAccount check
-            employeeResponse.setUserId(UUID.nameUUIDFromBytes(userEntity.getAccountEmail().getBytes()));
+        try {
+            UserEntity userEntity = userRepository.find("employeeId", employee.employeeId).firstResult();
+            if (userEntity != null && userEntity.getAccountEmail() != null) {
+                // Use accountEmail as unique identifier for hasAccount check
+                employeeResponse.setUserId(UUID.nameUUIDFromBytes(userEntity.getAccountEmail().getBytes()));
+            }
+        } catch (Exception e) {
+            // Log and continue - userId will remain null if lookup fails
+            log.warn("Failed to lookup user account for employeeId {}: {}", employee.employeeId, e.getMessage());
         }
 
         if (employee.jobTitleId != null) {

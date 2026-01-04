@@ -68,14 +68,30 @@ public class AttendanceServiceImpl implements AttendanceService {
 		log.debug("Checking for existing attendance: organizationId={}, employeeId={}, date={}",
 			organizationId, employeeId, today);
 
-		// Check if attendance already exists for today
+		// Check if there's already an attendance record for today
 		AttendanceEntity existingAttendance = AttendanceEntity.findByOrgAndEmployeeAndDate(organizationId, employeeId, today);
+		
 		if (existingAttendance != null) {
-			log.warn("Duplicate check-in attempt: employeeId={}, date={}", employeeId, today);
-			throw new BadRequestException("You have already checked in today. Please check out first.");
+			if (existingAttendance.checkOutTime == null) {
+				// There's an active check-in (not checked out yet)
+				log.warn("Duplicate check-in attempt: employeeId={}, date={}", employeeId, today);
+				throw new BadRequestException("You have already checked in today. Please check out first.");
+			} else {
+				// Already checked out today - update the record for re-check-in
+				log.info("Re-check-in after checkout: updating attendance record for employeeId={}, date={}", employeeId, today);
+				existingAttendance.checkInTime = checkInTime;
+				existingAttendance.checkOutTime = null;
+				existingAttendance.status = AttendanceStatus.PENDING;
+				if (request.getNotes() != null && !request.getNotes().trim().isEmpty()) {
+					existingAttendance.notes = request.getNotes();
+				}
+				existingAttendance.persist();
+				log.info("Employee {} re-checked in successfully at {}", employeeId, checkInTime);
+				return convertToDTO(existingAttendance);
+			}
 		}
 
-		// Create new attendance record
+		// Create new attendance record (first check-in of the day)
 		AttendanceEntity attendanceEntity = AttendanceEntity.builder()
 			.organizationId(organizationId)
 			.employeeId(employeeId)
