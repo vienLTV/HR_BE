@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="create-salary-table" author="system">
+        <createTable tableName="salary">
+            <column name="salary_id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="basic_salary" type="DECIMAL(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bonus" type="DECIMAL(15,2)" defaultValue="0.00">
+                <constraints nullable="true"/>
+            </column>
+            <column name="deductions" type="DECIMAL(15,2)" defaultValue="0.00">
+                <constraints nullable="true"/>
+            </column>
+            <column name="total_salary" type="DECIMAL(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="paid_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <!-- Add indexes for better query performance -->
+        <createIndex indexName="idx_salary_employee" tableName="salary">
+            <column name="employee_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_salary_organization" tableName="salary">
+            <column name="organization_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_salary_period" tableName="salary">
+            <column name="month"/>
+            <column name="year"/>
+        </createIndex>
+
+        <createIndex indexName="idx_salary_status" tableName="salary">
+            <column name="status"/>
+        </createIndex>
+
+        <!-- Composite index for common queries -->
+        <createIndex indexName="idx_salary_employee_period" tableName="salary">
+            <column name="employee_id"/>
+            <column name="month"/>
+            <column name="year"/>
+        </createIndex>
+
+        <!-- Foreign key constraints (commented out due to potential issues) -->
+        <!--
+        <addForeignKeyConstraint
+            constraintName="fk_salary_employee"
+            baseTableName="salary"
+            baseColumnNames="employee_id"
+            referencedTableName="employee_core"
+            referencedColumnNames="employee_id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            constraintName="fk_salary_organization"
+            baseTableName="salary"
+            baseColumnNames="organization_id"
+            referencedTableName="organization"
+            referencedColumnNames="organization_id"
+            onDelete="CASCADE"/>
+        -->
+    </changeSet>
+
+</databaseChangeLog>

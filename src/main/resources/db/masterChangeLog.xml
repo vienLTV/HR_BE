@@ -9,5 +9,6 @@
     <include file="db/auditChangeLog.xml"/>
     <include file="db/employeeHistoryAuditChangeLog.xml"/>
     <include file="db/leaveRequestChangeLog.xml"/>
+    <include file="db/salaryChangeLog.xml"/>
 
 </databaseChangeLog>

@@ -11,6 +11,7 @@ import org.microboy.security.dto.AuthRequest;
 import org.microboy.security.dto.AuthResponse;
 import org.microboy.security.config.OrganizationContext;
 import org.microboy.security.dto.UserDTO;
+import org.microboy.security.dto.request.ChangePasswordRequestDTO;
 import org.microboy.security.dto.request.CreateEmployeeAccountRequestDTO;
 import org.microboy.security.entity.UserEntity;
 import org.microboy.security.entity.UserRoleEntity;
@@ -181,6 +182,39 @@ public class UserServiceImpl implements UserService{
 
 		userEntity.setRole(request.getRole());
 		return userEntity;
+	}
+
+	@Override
+	@Transactional
+	public void changePassword(java.util.UUID employeeId, ChangePasswordRequestDTO request) {
+		if (employeeId == null) {
+			throw new BadRequestException("Employee ID is required");
+		}
+		if (request.getCurrentPassword() == null || request.getCurrentPassword().trim().isEmpty()) {
+			throw new BadRequestException("Current password is required");
+		}
+		if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+			throw new BadRequestException("New password is required");
+		}
+		if (request.getNewPassword().length() < 6) {
+			throw new BadRequestException("New password must be at least 6 characters");
+		}
+
+		// Find user by employeeId
+		UserEntity userEntity = userRepository.find("employeeId", employeeId).firstResult();
+		if (userEntity == null) {
+			throw new BadRequestException("User not found");
+		}
+
+		// Verify current password
+		String encodedCurrentPassword = passwordEncoder.encode(request.getCurrentPassword());
+		if (!userEntity.getPassword().equals(encodedCurrentPassword)) {
+			throw new BadRequestException("Current password is incorrect");
+		}
+
+		// Update password
+		userEntity.setPassword(passwordEncoder.encode(request.getNewPassword()));
+		userRepository.persist(userEntity);
 	}
 
 	private UserDTO convertToUserDTO(UserEntity userEntity) {

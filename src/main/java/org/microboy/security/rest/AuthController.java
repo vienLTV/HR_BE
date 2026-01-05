@@ -2,13 +2,16 @@ package org.microboy.security.rest;
 
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -19,11 +22,14 @@ import org.microboy.dto.request.SignUpRequestDTO;
 import org.microboy.dto.response.GeneralResponseDTO;
 import org.microboy.security.dto.AuthRequest;
 import org.microboy.security.dto.AuthResponse;
+import org.microboy.security.dto.request.ChangePasswordRequestDTO;
 import org.microboy.security.dto.request.CreateEmployeeAccountRequestDTO;
 import org.microboy.security.dto.UserDTO;
 import org.microboy.security.enums.Role;
 import org.microboy.security.service.UserService;
 import org.microboy.service.SignUpService;
+
+import java.util.UUID;
 
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
@@ -34,6 +40,9 @@ public class AuthController {
 
 	private final UserService userService;
 	private final SignUpService signUpService;
+
+	@Inject
+	JsonWebToken jwt;
 
 	@PermitAll
 	@POST
@@ -118,6 +127,26 @@ public class AuthController {
 		                                                Response.Status.CREATED.getStatusCode(),
 		                                                null,
 		                                                createdUser))
+		               .build();
+	}
+
+	@RolesAllowed({"USER", "MANAGER", "ADMIN", "OWNER"})
+	@PUT
+	@Path("/change-password")
+	@Operation(summary = "Change password", description = "Change user password")
+	@APIResponses({
+			@APIResponse(responseCode = "200", description = "Password changed successfully"),
+			@APIResponse(responseCode = "400", description = "Invalid request"),
+			@APIResponse(responseCode = "401", description = "Unauthorized")
+	})
+	public Response changePassword(ChangePasswordRequestDTO request) {
+		UUID employeeId = UUID.fromString(jwt.getClaim("employeeId"));
+		userService.changePassword(employeeId, request);
+		return Response.status(Response.Status.OK)
+		               .entity(new GeneralResponseDTO<>(true,
+		                                                Response.Status.OK.getStatusCode(),
+		                                                "Password changed successfully",
+		                                                null))
 		               .build();
 	}
 
