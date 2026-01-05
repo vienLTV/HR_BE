@@ -36,7 +36,8 @@
             <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
-        <addForeignKeyConstraint
+        <!-- Foreign keys commented out temporarily - will be added after confirming table names -->
+        <!-- <addForeignKeyConstraint
                 baseTableName="leave_requests"
                 baseColumnNames="employee_id"
                 constraintName="fk_leave_requests_employee"
@@ -50,7 +51,7 @@
                 constraintName="fk_leave_requests_organization"
                 referencedTableName="organization"
                 referencedColumnNames="organization_id"
-                onDelete="CASCADE"/>
+                onDelete="CASCADE"/> -->
 
         <createIndex tableName="leave_requests" indexName="idx_leave_requests_employee_id">
             <column name="employee_id"/>
