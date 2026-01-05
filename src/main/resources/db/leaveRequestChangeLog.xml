@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="create-leave-requests-table" author="system">
+        <createTable tableName="leave_requests">
+            <column name="leave_request_id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="employee_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="from_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="to_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason" type="VARCHAR(1000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approved_by" type="UUID"/>
+            <column name="approved_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="leave_requests"
+                baseColumnNames="employee_id"
+                constraintName="fk_leave_requests_employee"
+                referencedTableName="employees_core"
+                referencedColumnNames="employee_id"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="leave_requests"
+                baseColumnNames="organization_id"
+                constraintName="fk_leave_requests_organization"
+                referencedTableName="organization"
+                referencedColumnNames="organization_id"
+                onDelete="CASCADE"/>
+
+        <createIndex tableName="leave_requests" indexName="idx_leave_requests_employee_id">
+            <column name="employee_id"/>
+        </createIndex>
+
+        <createIndex tableName="leave_requests" indexName="idx_leave_requests_organization_id">
+            <column name="organization_id"/>
+        </createIndex>
+
+        <createIndex tableName="leave_requests" indexName="idx_leave_requests_status">
+            <column name="status"/>
+        </createIndex>
+
+        <createIndex tableName="leave_requests" indexName="idx_leave_requests_created_at">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
