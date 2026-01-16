@@ -9,14 +9,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.microboy.dto.request.CalculateSalaryRequestDTO;
 import org.microboy.dto.response.SalaryResponseDTO;
+import org.microboy.entity.AttendanceEntity;
 import org.microboy.entity.EmployeeCoreEntity;
 import org.microboy.entity.EmployeeHistoryEntity;
+import org.microboy.entity.LeaveRequestEntity;
 import org.microboy.entity.SalaryEntity;
 import org.microboy.entity.TeamMemberEntity;
+import org.microboy.enums.LeaveStatus;
 import org.microboy.enums.SalaryStatus;
 import org.microboy.repository.SalaryRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +34,9 @@ import java.util.stream.Collectors;
 public class SalaryServiceImpl implements SalaryService {
 
 	private final SalaryRepository salaryRepository;
+
+	private static final int WORKING_DAYS_TARGET = 22;
+	private static final BigDecimal ATTENDANCE_BONUS_RATE = new BigDecimal("0.05");
 
 	@Override
 	public List<SalaryResponseDTO> getMySalary(UUID employeeId, UUID organizationId) {
@@ -117,9 +125,9 @@ public class SalaryServiceImpl implements SalaryService {
 			// Get employee's base salary from latest employment history
 			BigDecimal basicSalary = getEmployeeBasicSalary(employee.employeeId);
 
-			// Calculate bonus and deductions (this is simplified - in real app would be more complex)
-			BigDecimal bonus = calculateBonus(employee.employeeId, dto.getMonth(), dto.getYear());
-			BigDecimal deductions = calculateDeductions(employee.employeeId, dto.getMonth(), dto.getYear());
+			// Calculate bonus and deductions with attendance + leave + tax rules
+			BigDecimal bonus = calculateBonus(organizationId, employee.employeeId, dto.getMonth(), dto.getYear(), basicSalary);
+			BigDecimal deductions = calculateDeductions(organizationId, employee.employeeId, dto.getMonth(), dto.getYear(), basicSalary, bonus);
 
 			// Create salary record
 			SalaryEntity salaryEntity = new SalaryEntity();
@@ -241,19 +249,77 @@ public class SalaryServiceImpl implements SalaryService {
 	 * Calculate bonus for employee (simplified logic)
 	 * In real application, this would consider performance, attendance, etc.
 	 */
-	private BigDecimal calculateBonus(UUID employeeId, Integer month, Integer year) {
-		// Simplified: no bonus calculation yet
-		// TODO: Implement based on business rules (attendance, performance, etc.)
+	private BigDecimal calculateBonus(UUID organizationId, UUID employeeId, Integer month, Integer year, BigDecimal basicSalary) {
+		AttendanceStats stats = computeAttendanceStats(organizationId, employeeId, month, year);
+
+		// Attendance bonus: +5% basic if không có ngày vắng (unpaidDays = 0)
+		if (stats.unpaidDays == 0) {
+			return basicSalary.multiply(ATTENDANCE_BONUS_RATE).setScale(2, RoundingMode.HALF_UP);
+		}
+
 		return BigDecimal.ZERO;
 	}
 
-	/**
-	 * Calculate deductions for employee (simplified logic)
-	 * In real application, this would consider insurance, taxes, leaves, etc.
-	 */
-	private BigDecimal calculateDeductions(UUID employeeId, Integer month, Integer year) {
-		// Simplified: no deduction calculation yet
-		// TODO: Implement based on business rules (insurance, taxes, unpaid leave, etc.)
-		return BigDecimal.ZERO;
+	private BigDecimal calculateDeductions(UUID organizationId, UUID employeeId, Integer month, Integer year,
+			BigDecimal basicSalary, BigDecimal bonus) {
+		AttendanceStats stats = computeAttendanceStats(organizationId, employeeId, month, year);
+
+		BigDecimal dailyRate = basicSalary
+				.divide(BigDecimal.valueOf(WORKING_DAYS_TARGET), 2, RoundingMode.HALF_UP);
+
+		BigDecimal absenceDeduction = dailyRate.multiply(BigDecimal.valueOf(stats.unpaidDays))
+				.setScale(2, RoundingMode.HALF_UP);
+
+		// Bỏ thuế thu nhập: chỉ trừ ngày vắng không lương
+		return absenceDeduction.setScale(2, RoundingMode.HALF_UP);
 	}
+
+	/**
+	 * Tính thống kê chấm công và nghỉ phép cho tháng.
+	 */
+	private AttendanceStats computeAttendanceStats(UUID organizationId, UUID employeeId, int month, int year) {
+		LocalDate start = LocalDate.of(year, month, 1);
+		LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+
+		List<AttendanceEntity> attendances = AttendanceEntity.find(
+				"organizationId = ?1 AND employeeId = ?2 AND attendanceDate BETWEEN ?3 AND ?4",
+				organizationId, employeeId, start, end)
+				.list();
+
+		long attendanceDays = attendances.stream()
+				.filter(a -> a.attendanceDate != null)
+				.distinct()
+				.count();
+
+		// Leave days (approved) overlapping the month
+		List<LeaveRequestEntity> approvedLeaves = LeaveRequestEntity.find(
+				"organizationId = ?1 AND status = ?2",
+				organizationId, LeaveStatus.APPROVED)
+				.list();
+
+		long approvedLeaveDays = approvedLeaves.stream()
+				.map(leave -> calculateOverlapDays(leave.fromDate, leave.toDate, start, end))
+				.filter(days -> days > 0)
+				.mapToLong(Long::longValue)
+				.sum();
+
+		int paidDays = (int) Math.min(WORKING_DAYS_TARGET, attendanceDays + approvedLeaveDays);
+		int unpaidDays = Math.max(0, WORKING_DAYS_TARGET - paidDays);
+
+		return new AttendanceStats((int) attendanceDays, (int) approvedLeaveDays, unpaidDays);
+	}
+
+	private long calculateOverlapDays(LocalDate from, LocalDate to, LocalDate windowStart, LocalDate windowEnd) {
+		if (from == null || to == null) {
+			return 0;
+		}
+		LocalDate effectiveStart = from.isBefore(windowStart) ? windowStart : from;
+		LocalDate effectiveEnd = to.isAfter(windowEnd) ? windowEnd : to;
+		if (effectiveEnd.isBefore(effectiveStart)) {
+			return 0;
+		}
+		return effectiveStart.datesUntil(effectiveEnd.plusDays(1)).count();
+	}
+
+	private record AttendanceStats(int attendanceDays, int approvedLeaveDays, int unpaidDays) {}
 }
