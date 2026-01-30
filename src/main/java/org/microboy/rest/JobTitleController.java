@@ -57,7 +57,7 @@ public class JobTitleController {
 	}
 
 	@GET
-	@RolesAllowed({OWNER, ADMIN, MANAGER})
+	@RolesAllowed({OWNER, ADMIN, MANAGER, USER})
 	@Operation(summary = "Get all job titles", description = "Returns a list of all job titles")
 	@APIResponses({
 			@APIResponse(responseCode = "200",

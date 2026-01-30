@@ -26,6 +26,7 @@ import java.util.UUID;
 import static org.microboy.security.constants.RoleConstants.ADMIN;
 import static org.microboy.security.constants.RoleConstants.MANAGER;
 import static org.microboy.security.constants.RoleConstants.OWNER;
+import static org.microboy.security.constants.RoleConstants.USER;
 
 @Path("/employees/profile")
 @Produces(MediaType.APPLICATION_JSON)
@@ -38,7 +39,7 @@ public class EmployeeProfileController {
 
 	@GET
 	@Path("/{id}")
-	@RolesAllowed({OWNER, ADMIN, MANAGER})
+	@RolesAllowed({OWNER, ADMIN, MANAGER, USER})
 	@Operation(summary = "Get profile based on given id", description = "Return employee profile with given id")
 	@APIResponses({
 			@APIResponse(responseCode = "200",
@@ -59,7 +60,7 @@ public class EmployeeProfileController {
 	}
 
 	@POST
-	@RolesAllowed({OWNER, ADMIN, MANAGER})
+	@RolesAllowed({OWNER, ADMIN, MANAGER, USER})
 	@Operation(summary = "Update employee profile", description = "Return info that is updated")
 	@APIResponses({
 			@APIResponse(responseCode = "200",

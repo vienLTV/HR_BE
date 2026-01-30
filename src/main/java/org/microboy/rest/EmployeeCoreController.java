@@ -41,7 +41,7 @@ public class EmployeeCoreController {
 	private final EmployeeService employeeService;
 
 	@GET
-	@RolesAllowed({OWNER, ADMIN, MANAGER})
+	@RolesAllowed({OWNER, ADMIN, MANAGER, USER})
 	@Operation(summary = "Get all employees", description = "Returns a list of all employees")
 	@APIResponses({
 			@APIResponse(responseCode = "200",
@@ -80,7 +80,7 @@ public class EmployeeCoreController {
 
 	@GET
 	@Path("/{id}")
-	@RolesAllowed({OWNER, ADMIN, MANAGER})
+	@RolesAllowed({OWNER, ADMIN, MANAGER, USER})
 	@Operation(summary = "Get employee based on given id", description = "Return employee with given id")
 	@APIResponses({
 			@APIResponse(responseCode = "200",
