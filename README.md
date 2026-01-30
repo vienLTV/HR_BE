@@ -581,7 +581,7 @@ curl -X POST http://localhost:8080/employees \
 #### Bước 1: Clone Repository
 
 ```bash
-git clone <https://github.com/vienLTV/HR_BE.git>
+git clone https://github.com/vienLTV/HR_BE.git
 cd cetus-core-master
 ```
 

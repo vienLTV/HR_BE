@@ -4,9 +4,11 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -25,6 +27,7 @@ import org.microboy.security.dto.AuthResponse;
 import org.microboy.security.dto.request.ChangePasswordRequestDTO;
 import org.microboy.security.dto.request.CreateEmployeeAccountRequestDTO;
 import org.microboy.security.dto.UserDTO;
+import org.microboy.security.entity.UserEntity;
 import org.microboy.security.enums.Role;
 import org.microboy.security.service.UserService;
 import org.microboy.service.SignUpService;
@@ -147,6 +150,30 @@ public class AuthController {
 		                                                Response.Status.OK.getStatusCode(),
 		                                                "Password changed successfully",
 		                                                null))
+		               .build();
+	}
+
+	@PermitAll
+	@GET
+	@Path("/users/{email}")
+	@Operation(summary = "Get user by email", description = "Get user information including role")
+	@APIResponses({
+			@APIResponse(responseCode = "200", description = "User found", 
+			             content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))),
+			@APIResponse(responseCode = "404", description = "User not found")
+	})
+	public Response getUserByEmail(@PathParam("email") String email) {
+		UserEntity userEntity = userService.findById(email);
+		if (userEntity == null) {
+			return Response.status(Response.Status.NOT_FOUND)
+			               .entity(new GeneralResponseDTO<>(false, 404, "User not found", null))
+			               .build();
+		}
+		UserDTO userDTO = new UserDTO();
+		userDTO.setAccountEmail(userEntity.getAccountEmail());
+		userDTO.setRole(userEntity.getRole());
+		return Response.status(Response.Status.OK)
+		               .entity(new GeneralResponseDTO<>(true, 200, null, userDTO))
 		               .build();
 	}
 

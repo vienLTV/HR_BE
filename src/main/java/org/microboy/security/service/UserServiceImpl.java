@@ -26,9 +26,11 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService{
 
 	private final UserRepository userRepository;
@@ -74,8 +76,14 @@ public class UserServiceImpl implements UserService{
 		UserEntity userEntity = userRepository.findById(email);
 		if (userEntity != null) {
 			List<UserRoleEntity> userRoleEntities = userRoleRepository.findUserRoleByAccountEmail(userEntity.getAccountEmail());
-			Role role = userRoleEntities.stream().map(UserRoleEntity::getRoleName).findFirst().get();
-			userEntity.setRole(role);
+			log.debug("Found {} roles for email {}", userRoleEntities.size(), email);
+			if (!userRoleEntities.isEmpty()) {
+				Role role = userRoleEntities.stream().map(UserRoleEntity::getRoleName).findFirst().get();
+				userEntity.setRole(role);
+				log.debug("Set role {} for user {}", role, email);
+			} else {
+				log.warn("No roles found for email {}", email);
+			}
 		}
 		return userEntity;
 	}
